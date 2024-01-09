@@ -1,0 +1,7 @@
+include:
+  - local: "ci/gitlab/deploy.yml"
+  - local: "ci/gitlab/destroy.yml"
+
+stages:
+  - deploy
+  - destroy

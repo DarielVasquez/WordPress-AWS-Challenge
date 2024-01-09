@@ -1,0 +1,10 @@
+#terraform
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+/ci/provisioning/site.retry
