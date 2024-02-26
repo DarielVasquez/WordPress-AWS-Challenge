@@ -2,10 +2,15 @@ resource "aws_instance" "wordpress" {
   ami           = var.ami_id  
   instance_type = var.instance_type 
   key_name      = var.key_pair
-  security_groups = [ aws_security_group.security_group.name ]
+  subnet_id = var.subnet_id
+  vpc_security_group_ids = [ var.security_group ]
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
   user_data = base64encode(templatefile("${path.module}/ec2_config.sh", {
-    NAME = "${var.name_prefix}-wordpress"
+    AWS_REGION = var.aws_region
+    ECR_REPOSITORY_URL = var.ecr_repository_url
+    ECR_REPOSITORY_NAME = var.ecr_repository_name
+    DOCKER_IMAGE_TAG = var.docker_image_tag
   }))
 
   tags = {
@@ -27,30 +32,26 @@ resource "aws_eip" "eip" {
   }
 }
 
-resource "aws_security_group" "security_group" {
-  name        = "${var.name_prefix}-security-group"
-  description = "Security group for ${var.name_prefix}-wordpress"
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.name_prefix}-instance-profile"
+  role = "${aws_iam_role.ecr_full_access_role.name}"
+}
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_iam_role" "ecr_full_access_role" {
+  name = "${var.name_prefix}-ecr-access-role"
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
 
   tags = {
     "Name"        = "${var.name_prefix}-wordpress"
@@ -58,4 +59,9 @@ resource "aws_security_group" "security_group" {
     "Project"     = var.project_tag
     "Environment" = var.env_tag
   }
+}
+
+resource "aws_iam_role_policy_attachment" "ecr_full_access_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"
+  role       = aws_iam_role.ecr_full_access_role.name
 }

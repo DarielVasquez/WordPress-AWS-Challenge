@@ -1,0 +1,45 @@
+terraform:
+  stage: terraform
+  image:
+    name: hashicorp/terraform:1.5
+    entrypoint: ["/bin/sh", "-c"]
+  tags:
+    - terraform
+  before_script:
+    - apk --update --no-cache add python3 py-pip ca-certificates terraform tree git
+    - pip3 install python-dateutil awscli
+    - cd ci/terraform
+  script:
+    - echo "access_key=\"$AWS_ACCESS_KEY_ID\"" > terraform.tfvars
+    - echo "secret_key=\"$AWS_SECRET_ACCESS_KEY\""  >> terraform.tfvars
+    - echo "aws_region=\"$AWS_REGION\""  >> terraform.tfvars
+    - echo "name_prefix=\"$NAME_PREFIX\"" >> terraform.tfvars
+    - echo "project_tag=\"$PROJECT_TAG\"" >> terraform.tfvars
+    - echo "devops_tag=\"$DEVOPS_TAG\"" >> terraform.tfvars
+    - echo "env_tag=\"$ENV_TAG\"" >> terraform.tfvars
+    - echo "ami_id=\"$AMI_ID\"" >> terraform.tfvars
+    - echo "instance_type=\"$INSTANCE_TYPE\"" >> terraform.tfvars
+    - echo "key_pair=\"$KEY_PAIR\"" >> terraform.tfvars
+    - echo "zone_id=\"$ZONE_ID\"" >> terraform.tfvars
+    - echo "hosted_zone_name=\"$HOSTED_ZONE_NAME\"" >> terraform.tfvars
+    - echo "certificate_arn=\"$CERTIFICATE_ARN\"" >> terraform.tfvars
+    - echo "docker_image_tag=\"$DOCKER_IMAGE_TAG\"" >> terraform.tfvars
+    - echo "mysql_database=\"$MYSQL_DATABASE\"" >> terraform.tfvars
+    - echo "mysql_user=\"$MYSQL_USER\"" >> terraform.tfvars
+    - terraform init
+      -backend-config="key=${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}-wordpress"
+      -backend-config="bucket=${S3_BUCKET_TF_STATE}" -upgrade
+    - terraform apply -auto-approve
+    - echo "ECR_REPOSITORY_URL=$(terraform output -raw ecr_repository_url)" >> ../../vars.env
+    - echo "ECR_REPOSITORY_NAME=$(terraform output -raw ecr_repository_name)" >> ../../vars.env
+  artifacts:
+    reports:
+      dotenv: vars.env
+  only:
+    refs:
+      - main
+    changes:
+      - .gitlab-ci.yml
+      - ci/gitlab/*
+      - Dockerfile
+      - scripts/docker_config.sh

@@ -1,0 +1,34 @@
+deploy-ec2:
+  stage: deploy
+  image:
+    name: alpine:latest
+  tags:
+    - deploy
+  before_script:
+    - "command -v ssh-agent >/dev/null || ( apk add --update openssh )"
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+  script:
+    - EIP_ADDRESS=${EIP_ADDRESS}
+    - ECR_REPOSITORY_URL=${ECR_REPOSITORY_URL}
+    - ECR_REPOSITORY_NAME=${ECR_REPOSITORY_NAME}
+    - DB_HOST=${DB_HOST}
+    - echo "export ECR_REPOSITORY_URL=\"$ECR_REPOSITORY_URL\"" >> variables.sh
+    - echo "export ECR_REPOSITORY_NAME=\"$ECR_REPOSITORY_NAME\"" >> variables.sh
+    - echo "export DB_HOST=\"$DB_HOST\"" >> variables.sh
+    - echo "export DOCKER_IMAGE_TAG=\"$DOCKER_IMAGE_TAG\"" >> variables.sh
+    - echo "export AWS_REGION=\"$AWS_REGION\"" >> variables.sh
+    - chmod +x variables.sh
+    - scp -o StrictHostKeyChecking=no variables.sh ubuntu@$EIP_ADDRESS:variables.sh
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@$EIP_ADDRESS 'bash -s' < scripts/check_update.sh
+  when: manual
+  only:
+    refs:
+      - main
+    changes:
+      - .gitlab-ci.yml
+      - ci/gitlab/*
+      - Dockerfile
+      - scripts/docker_config.sh

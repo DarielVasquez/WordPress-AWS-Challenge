@@ -32,6 +32,12 @@ This repository contains Terraform configurations to set up an AWS instance as a
    ami_id
    instance_type
    key_pair
+   hosted_zone_name
+   zone_id
+   certificate_arn
+   docker_image_tag
+   mysql_database
+   mysql_user
    ```
 
 3. Initialize Terraform:
@@ -46,7 +52,7 @@ This repository contains Terraform configurations to set up an AWS instance as a
    terraform apply -auto-approve
    ```
 
-5. Once Terraform applies the changes successfully, it will output the public IP address of the EC2 instance. Access WordPress by navigating to `http://<instance_public_ip>/` in your web browser.
+5. Once Terraform applies the changes successfully, it will output the address of the EC2 instance. Access WordPress by navigating to `https://<hosted_zone_name>/` in your web browser.
 
 6. Follow the on-screen instructions to complete the WordPress installation process. You might need to provide database details, admin credentials, and site configuration.
 

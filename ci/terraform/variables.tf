@@ -17,3 +17,15 @@ variable "ami_id" {}
 variable "instance_type" {}
 
 variable "key_pair" {}
+
+variable "hosted_zone_name" {}
+
+variable "zone_id" {}
+
+variable "certificate_arn" {}
+
+variable "docker_image_tag" {}
+
+variable "mysql_user" {}
+
+variable "mysql_database" {}

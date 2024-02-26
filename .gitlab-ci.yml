@@ -1,7 +1,11 @@
 include:
-  - local: "ci/gitlab/deploy.yml"
-  - local: "ci/gitlab/destroy.yml"
+  - local: "ci/gitlab/terraform-stage.yml"
+  - local: "ci/gitlab/build-stage.yml"
+  - local: "ci/gitlab/deploy-stage.yml"
+  - local: "ci/gitlab/destroy-stage.yml"
 
 stages:
+  - terraform
+  - build
   - deploy
   - destroy
